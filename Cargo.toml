@@ -1,0 +1,26 @@
+[package]
+
+version = "0.1.0"
+
+name = "fast-floats"
+license = "MIT/Apache-2.0"
+authors = ["bluss"]
+
+repository = "https://github.com/bluss/fast-floats"
+documentation = "https://docs.rs/fast-floats/"
+
+readme = "README-crates.io.md"
+description = "Fast-math wrappers for floats; experimental and unstable; for experiments."
+
+keywords = []
+categories = []
+
+[dependencies]
+num-traits = { version = "0.1.40", optional = true }
+
+[features]
+
+[package.metadata.docs.rs]
+
+[package.metadata.release]
+no-dev-version = true
