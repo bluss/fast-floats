@@ -75,13 +75,50 @@ pub fn regular_sum(xs: &[f64]) -> f64 {
 macro_rules! impl_op {
     ($($name:ident, $method:ident, $intrins:ident;)*) => {
         $(
+        // Fast<F> + F
+        impl $name<f64> for Fast<f64> {
+            type Output = Self;
+            #[inline(always)]
+            fn $method(self, rhs: f64) -> Self::Output {
+                unsafe {
+                    Fast($intrins(self.0, rhs))
+                }
+            }
+        }
+
+        impl $name<f32> for Fast<f32> {
+            type Output = Self;
+            #[inline(always)]
+            fn $method(self, rhs: f32) -> Self::Output {
+                unsafe {
+                    Fast($intrins(self.0, rhs))
+                }
+            }
+        }
+
+        // F + Fast<F>
+        impl $name<Fast<f64>> for f64 {
+            type Output = Fast<f64>;
+            #[inline(always)]
+            fn $method(self, rhs: Fast<f64>) -> Self::Output {
+                Fast(self).$method(rhs.0)
+            }
+        }
+
+        impl $name<Fast<f32>> for f32 {
+            type Output = Fast<f32>;
+            #[inline(always)]
+            fn $method(self, rhs: Fast<f32>) -> Self::Output {
+                Fast(self).$method(rhs.0)
+            }
+        }
+
+        // Fast<F> + Fast<F>
         impl $name for Fast<f64> {
             type Output = Self;
             #[inline(always)]
             fn $method(self, rhs: Self) -> Self::Output {
-                unsafe {
-                    Fast($intrins(self.0, rhs.0))
-                }
+                self.$method(rhs.0)
             }
         }
 
@@ -89,9 +126,7 @@ macro_rules! impl_op {
             type Output = Self;
             #[inline(always)]
             fn $method(self, rhs: Self) -> Self::Output {
-                unsafe {
-                    Fast($intrins(self.0, rhs.0))
-                }
+                self.$method(rhs.0)
             }
         }
         )*
@@ -102,16 +137,11 @@ macro_rules! impl_op {
 macro_rules! impl_assignop {
     ($($name:ident, $method:ident, $intrins:ident;)*) => {
         $(
-        impl $name for Fast<f64> {
+        impl<F, Rhs> $name<Rhs> for Fast<F>
+            where Self: Add<Rhs, Output=Self> + Copy,
+        {
             #[inline(always)]
-            fn $method(&mut self, rhs: Self) {
-                *self = *self + rhs
-            }
-        }
-
-        impl $name for Fast<f32> {
-            #[inline(always)]
-            fn $method(&mut self, rhs: Self) {
+            fn $method(&mut self, rhs: Rhs) {
                 *self = *self + rhs
             }
         }
