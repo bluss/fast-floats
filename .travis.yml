@@ -1,0 +1,12 @@
+language: rust
+sudo: false
+matrix:
+  include:
+    - rust: nightly
+branches:
+  only:
+    - master
+script:
+  - |
+      cargo build -v &&
+      cargo test -v
