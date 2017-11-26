@@ -2,7 +2,7 @@
 //!
 //! These wrappers enable the [“fast-math”][1] flags for the operations
 //! where there are intrinsics for this (add, sub, mul, div, rem).
-//! The wrappers exist so that we have a quick & easy way to experiment
+//! The wrappers exist so that we have a quick & easy way **to experiment**
 //! with fast math flags and further that feature in Rust.
 //!
 //! Note that as of this writing, the Rust instrinsics use the “fast” flag
