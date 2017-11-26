@@ -43,7 +43,7 @@ use std::ops::{
 ///
 /// The `Fast` type enforces no invariant and can hold any f32, f64 values.
 /// See crate docs for more details.
-#[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Default)]
+#[derive(Copy, Clone, PartialEq, PartialOrd, Default)]
 pub struct Fast<F>(pub F);
 
 impl<F> Fast<F> {
@@ -154,6 +154,21 @@ impl Zero for Fast<f32> {
     fn zero() -> Self { Fast(<_>::zero()) }
     fn is_zero(&self) -> bool { self.get().is_zero() }
 }
+
+use std::fmt;
+macro_rules! impl_format {
+    ($($name:ident)+) => {
+        $(
+        impl<F: fmt::$name> fmt::$name for Fast<F> {
+            fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+                self.0.fmt(f)
+            }
+        }
+        )+
+    }
+}
+
+impl_format!(Debug Display LowerExp UpperExp);
 
 
 #[cfg(test)]
