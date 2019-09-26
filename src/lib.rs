@@ -47,6 +47,11 @@ use std::ops::{
 #[repr(transparent)]
 pub struct Fast<F>(pub F);
 
+/// “fast-math” wrapper for `f64`
+pub type FF64 = Fast<f64>;
+/// “fast-math” wrapper for `f32`
+pub type FF32 = Fast<f32>;
+
 impl<F> Fast<F> {
     /// Get the inner value
     pub fn get(self) -> F { self.0 }
