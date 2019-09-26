@@ -61,6 +61,14 @@ impl<F> From<F> for Fast<F> {
     fn from(x: F) -> Self { Fast(x) }
 }
 
+impl Into<f32> for Fast<f32> {
+    fn into(self: Self) -> f32 { self.get() }
+}
+
+impl Into<f64> for Fast<f64> {
+    fn into(self: Self) -> f64 { self.get() }
+}
+
 // for demonstration purposes
 #[cfg(test)]
 pub fn fast_sum(xs: &[f64]) -> f64 {
