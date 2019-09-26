@@ -17,6 +17,11 @@ __ https://docs.rs/fast-floats/
 Recent Changes
 --------------
 
+- 0.1.2
+
+  - Use repr(transparent) on Fast
+  - Add type aliases FF64, FF32 and a few trait impls
+
 - 0.1.1
 
   - Add mixed operations (Fast<f64> + f64 etc.)

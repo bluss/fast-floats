@@ -1,6 +1,5 @@
 [package]
-
-version = "0.1.1"
+version = "0.1.2"
 
 name = "fast-floats"
 license = "MIT/Apache-2.0"
@@ -21,6 +20,7 @@ num-traits = { version = "0.1.40", optional = true }
 [features]
 
 [package.metadata.docs.rs]
+features = ["num-traits"]
 
 [package.metadata.release]
 no-dev-version = true
