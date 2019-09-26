@@ -44,6 +44,7 @@ use std::ops::{
 /// The `Fast` type enforces no invariant and can hold any f32, f64 values.
 /// See crate docs for more details.
 #[derive(Copy, Clone, PartialEq, PartialOrd, Default)]
+#[repr(transparent)]
 pub struct Fast<F>(pub F);
 
 impl<F> Fast<F> {
