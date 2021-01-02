@@ -14,7 +14,7 @@
 //!
 //! This crate is nightly only and experimental. Breaking changes can occur at
 //! any time, if changes in Rust require it.
-#![no_std]
+#![cfg_attr(not(feature = "std"), no_std)]
 #![feature(core_intrinsics)]
 
 #[cfg(feature = "num-traits")]
@@ -23,21 +23,14 @@ extern crate num_traits;
 #[cfg(feature = "num-traits")]
 use num_traits::Zero;
 
+#[cfg(not(feature = "std"))]
 extern crate core as std;
 
-use std::intrinsics::{fadd_fast, fsub_fast, fmul_fast, fdiv_fast, frem_fast};
-use std::ops::{
-    Add,
-    Sub,
-    Mul,
-    Div,
-    Rem,
-    AddAssign,
-    SubAssign,
-    MulAssign,
-    DivAssign,
-    RemAssign,
-};
+#[cfg(feature = "std")]
+use std::num::FpCategory;
+
+use std::intrinsics::{fadd_fast, fdiv_fast, fmul_fast, frem_fast, fsub_fast};
+use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Rem, RemAssign, Sub, SubAssign};
 
 /// “fast-math” wrapper for f32 and f64.
 ///
@@ -54,31 +47,49 @@ pub type FF32 = Fast<f32>;
 
 impl<F> Fast<F> {
     /// Get the inner value
-    pub fn get(self) -> F { self.0 }
+    #[inline(always)]
+    pub fn get(self) -> F {
+        self.0
+    }
 }
 
 impl<F> From<F> for Fast<F> {
-    fn from(x: F) -> Self { Fast(x) }
+    #[inline(always)]
+    fn from(x: F) -> Self {
+        Fast(x)
+    }
 }
 
 impl Into<f32> for Fast<f32> {
-    fn into(self: Self) -> f32 { self.get() }
+    #[inline(always)]
+    fn into(self: Self) -> f32 {
+        self.get()
+    }
 }
 
 impl Into<f64> for Fast<f64> {
-    fn into(self: Self) -> f64 { self.get() }
+    #[inline(always)]
+    fn into(self: Self) -> f64 {
+        self.get()
+    }
 }
 
 // for demonstration purposes
 #[cfg(test)]
 pub fn fast_sum(xs: &[f64]) -> f64 {
-    xs.iter().map(|&x| Fast(x)).fold(Fast(0.), |acc, x| acc + x).get()
+    xs.iter()
+        .map(|&x| Fast(x))
+        .fold(Fast(0.), |acc, x| acc + x)
+        .get()
 }
 
 // for demonstration purposes
 #[cfg(test)]
 pub fn fast_dot(xs: &[f64], ys: &[f64]) -> f64 {
-    xs.iter().zip(ys).fold(Fast(0.), |acc, (&x, &y)| acc + Fast(x) * Fast(y)).get()
+    xs.iter()
+        .zip(ys)
+        .fold(Fast(0.), |acc, (&x, &y)| acc + Fast(x) * Fast(y))
+        .get()
 }
 
 #[cfg(test)]
@@ -180,25 +191,6 @@ impl_assignop! {
     RemAssign, rem_assign, frem_fast;
 }
 
-/*
-impl<Z> Zero for Fast<Z> where Z: Zero {
-    fn zero() -> Self { Fast(Z::zero()) }
-    fn is_zero(&self) -> bool {
-        self.0.is_zero()
-    }
-}
-*/
-#[cfg(feature = "num-traits")]
-impl Zero for Fast<f64> {
-    fn zero() -> Self { Fast(<_>::zero()) }
-    fn is_zero(&self) -> bool { self.get().is_zero() }
-}
-#[cfg(feature = "num-traits")]
-impl Zero for Fast<f32> {
-    fn zero() -> Self { Fast(<_>::zero()) }
-    fn is_zero(&self) -> bool { self.get().is_zero() }
-}
-
 use std::fmt;
 macro_rules! impl_format {
     ($($name:ident)+) => {
@@ -214,6 +206,160 @@ macro_rules! impl_format {
 
 impl_format!(Debug Display LowerExp UpperExp);
 
+#[cfg(feature = "num-traits")]
+impl Zero for Fast<f64> {
+    fn zero() -> Self {
+        Fast(<_>::zero())
+    }
+    fn is_zero(&self) -> bool {
+        self.get().is_zero()
+    }
+}
+#[cfg(feature = "num-traits")]
+impl Zero for Fast<f32> {
+    fn zero() -> Self {
+        Fast(<_>::zero())
+    }
+    fn is_zero(&self) -> bool {
+        self.get().is_zero()
+    }
+}
+
+#[cfg(feature = "std")]
+macro_rules! delegate_no_args {
+    ($($method: ident -> $rtype: ty),*$(,)?) => {
+        $(
+            #[inline(always)]
+            pub fn $method(self) -> $rtype {
+                self.0.$method().into()
+            }
+        )*
+    };
+}
+
+#[cfg(feature = "std")]
+macro_rules! delegate_one_arg {
+    ($($method: ident($arg: ident : $atype: ty)),*$(,)?) => {
+        $(
+            #[inline(always)]
+            pub fn $method(self, $arg: $atype) -> Self {
+                self.0.$method($arg).into()
+            }
+        )*
+    };
+}
+
+#[cfg(feature = "std")]
+macro_rules! delegate_two_args {
+    ($($method: ident($arg1: ident : $atype1: ty, $arg2: ident : $atype2: ty)),*$(,)?) => {
+        $(
+            #[inline(always)]
+            pub fn $method(self, $arg1: $atype1, $arg2: $atype2) -> Self {
+                self.0.$method($arg1, $arg2).into()
+            }
+        )*
+    };
+}
+
+#[cfg(feature = "std")]
+macro_rules! delegate_conversion_from {
+    ($primitive: ty { $($method: ident($from: ident : $from_type: ty)),*$(,)? }) => {
+        $(
+            #[inline(always)]
+            pub fn $method($from: $from_type) -> Self {
+                <$primitive>::$method($from).into()
+            }
+        )*
+    };
+}
+
+#[cfg(feature = "std")]
+macro_rules! impl_delegations {
+    ($wrapper: ident, $float: ident, $btype: ty, $bytes: literal) => {
+        impl $wrapper {
+            delegate_no_args! {
+                floor -> Self,
+                ceil -> Self,
+                round -> Self,
+                trunc -> Self,
+                fract -> Self,
+                abs -> Self,
+                signum -> Self,
+                sqrt -> Self,
+                exp -> Self,
+                exp2 -> Self,
+                ln -> Self,
+                log2 -> Self,
+                log10 -> Self,
+                cbrt -> Self,
+                sin -> Self,
+                cos -> Self,
+                tan -> Self,
+                asin -> Self,
+                acos -> Self,
+                atan -> Self,
+                exp_m1 -> Self,
+                ln_1p -> Self,
+                sinh -> Self,
+                cosh -> Self,
+                tanh -> Self,
+                asinh -> Self,
+                acosh -> Self,
+                atanh -> Self,
+                is_nan -> bool,
+                is_infinite -> bool,
+                is_finite -> bool,
+                is_normal -> bool,
+                classify -> FpCategory,
+                is_sign_positive -> bool,
+                is_sign_negative -> bool,
+                recip -> Self,
+                to_degrees -> Self,
+                to_radians -> Self,
+                to_bits -> $btype,
+                to_be_bytes -> [u8; $bytes],
+                to_le_bytes -> [u8; $bytes],
+                to_ne_bytes -> [u8; $bytes],
+            }
+
+            delegate_one_arg! {
+                copysign(sign: $float),
+                div_euclid(rhs: $float),
+                rem_euclid(rhs: $float),
+                powi(rhs: i32),
+                powf(rhs: $float),
+                log(base: $float),
+                hypot(other: $float),
+                atan2(other: $float),
+                max(other: $float),
+                min(other: $float),
+            }
+
+            delegate_two_args! {
+                mul_add(a: $float, b: $float),
+            }
+
+            delegate_conversion_from! { $float {
+                from_bits(v: $btype),
+                from_be_bytes(bytes: [u8; $bytes]),
+                from_le_bytes(bytes: [u8; $bytes]),
+                from_ne_bytes(bytes: [u8; $bytes]),
+            }}
+
+            #[inline(always)]
+            pub fn sin_cos(self) -> ($wrapper, $wrapper) {
+                let (sin, cos) = self.0.sin_cos();
+                (sin.into(), cos.into())
+            }
+        }
+    };
+}
+
+#[cfg(feature = "std")]
+impl_delegations! { FF32, f32, u32, 4 }
+
+#[cfg(feature = "std")]
+impl_delegations! { FF64, f64, u64, 8 }
 
 #[cfg(test)]
 mod tests {
