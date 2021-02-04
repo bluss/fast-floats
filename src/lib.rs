@@ -214,6 +214,47 @@ macro_rules! impl_format {
 
 impl_format!(Debug Display LowerExp UpperExp);
 
+/// Extension trait providing fast arithmetic as *unsafe* methods on `f32` and `f64`.
+///
+/// Compared to the [`Fast`] newtype, this approach sacrifices the ability to use symbolic
+/// operators (`+`, `-`, `*`, `/`, `%`), but does not require an explicit wrapper and preserves the
+/// `unsafe` marker from the underlying intrinsics.
+pub trait FastFloat {
+    unsafe fn fast_add(self, other: Self) -> Self;
+    unsafe fn fast_sub(self, other: Self) -> Self;
+    unsafe fn fast_mul(self, other: Self) -> Self;
+    unsafe fn fast_div(self, other: Self) -> Self;
+    unsafe fn fast_rem(self, other: Self) -> Self;
+}
+
+macro_rules! impl_fast_float {
+    ($t:ty) => {
+        impl FastFloat for $t {
+            unsafe fn fast_add(self, other: Self) -> Self {
+                fadd_fast(self, other)
+            }
+
+            unsafe fn fast_sub(self, other: Self) -> Self {
+                fsub_fast(self, other)
+            }
+
+            unsafe fn fast_mul(self, other: Self) -> Self {
+                fmul_fast(self, other)
+            }
+
+            unsafe fn fast_div(self, other: Self) -> Self {
+                fdiv_fast(self, other)
+            }
+
+            unsafe fn fast_rem(self, other: Self) -> Self {
+                frem_fast(self, other)
+            }
+        }
+    };
+}
+
+impl_fast_float! {f32}
+impl_fast_float! {f64}
 
 #[cfg(test)]
 mod tests {
