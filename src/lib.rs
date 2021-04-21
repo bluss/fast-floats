@@ -149,14 +149,14 @@ macro_rules! impl_op {
 }
 
 macro_rules! impl_assignop {
-    ($($name:ident, $method:ident, $intrins:ident;)*) => {
+    ($($name:ident, $method:ident, $optrt:ident, $opmth:ident;)*) => {
         $(
         impl<F, Rhs> $name<Rhs> for Fast<F>
-            where Self: Add<Rhs, Output=Self> + Copy,
+            where Self: $optrt<Rhs, Output=Self> + Copy,
         {
             #[inline(always)]
             fn $method(&mut self, rhs: Rhs) {
-                *self = *self + rhs
+                *self = (*self).$opmth(rhs)
             }
         }
         )*
@@ -173,11 +173,11 @@ impl_op! {
 }
 
 impl_assignop! {
-    AddAssign, add_assign, fadd_fast;
-    SubAssign, sub_assign, fsub_fast;
-    MulAssign, mul_assign, fmul_fast;
-    DivAssign, div_assign, fdiv_fast;
-    RemAssign, rem_assign, frem_fast;
+    AddAssign, add_assign, Add, add;
+    SubAssign, sub_assign, Sub, sub;
+    MulAssign, mul_assign, Mul, mul;
+    DivAssign, div_assign, Div, div;
+    RemAssign, rem_assign, Rem, rem;
 }
 
 /*
@@ -230,5 +230,26 @@ mod tests {
     #[test]
     fn each_op() {
         test_op!(+ - * / %);
+    }
+
+    macro_rules! assign_op {
+        ($($x:literal $op:tt $y:literal is $z:literal ;)+) => {
+            $(
+                let mut x = Fast($x);
+                x $op Fast($y);
+                assert_eq!(x, Fast($z));
+            )+
+        }
+    }
+
+    #[test]
+    fn assign_ops() {
+        assign_op!(
+            1. += 2. is 3.;
+            1. -= 2. is -1.;
+            2. *= 2. is 4.;
+            2. /= 2. is 1.;
+            5. %= 2. is 1.;
+        );
     }
 }
