@@ -17,12 +17,6 @@
 #![no_std]
 #![feature(core_intrinsics)]
 
-#[cfg(feature = "num-traits")]
-extern crate num_traits;
-
-#[cfg(feature = "num-traits")]
-use num_traits::Zero;
-
 extern crate core as std;
 
 use std::intrinsics::{fadd_fast, fsub_fast, fmul_fast, fdiv_fast, frem_fast};
@@ -43,9 +37,9 @@ use std::ops::{
 ///
 /// The `Fast` type enforces no invariant and can hold any f32, f64 values.
 /// See crate docs for more details.
-#[derive(Copy, Clone, PartialEq, PartialOrd, Default)]
+#[derive(Copy, Clone, PartialEq, PartialOrd)]
 #[repr(transparent)]
-pub struct Fast<F>(pub F);
+pub struct Fast<F>(F);
 
 /// “fast-math” wrapper for `f64`
 pub type FF64 = Fast<f64>;
@@ -53,12 +47,11 @@ pub type FF64 = Fast<f64>;
 pub type FF32 = Fast<f32>;
 
 impl<F> Fast<F> {
+    /// Create a new fast value
+    pub unsafe fn new(value: F) -> Self { Fast(value) }
+
     /// Get the inner value
     pub fn get(self) -> F { self.0 }
-}
-
-impl<F> From<F> for Fast<F> {
-    fn from(x: F) -> Self { Fast(x) }
 }
 
 impl Into<f32> for Fast<f32> {
@@ -67,23 +60,6 @@ impl Into<f32> for Fast<f32> {
 
 impl Into<f64> for Fast<f64> {
     fn into(self: Self) -> f64 { self.get() }
-}
-
-// for demonstration purposes
-#[cfg(test)]
-pub fn fast_sum(xs: &[f64]) -> f64 {
-    xs.iter().map(|&x| Fast(x)).fold(Fast(0.), |acc, x| acc + x).get()
-}
-
-// for demonstration purposes
-#[cfg(test)]
-pub fn fast_dot(xs: &[f64], ys: &[f64]) -> f64 {
-    xs.iter().zip(ys).fold(Fast(0.), |acc, (&x, &y)| acc + Fast(x) * Fast(y)).get()
-}
-
-#[cfg(test)]
-pub fn regular_sum(xs: &[f64]) -> f64 {
-    xs.iter().map(|&x| x).fold(0., |acc, x| acc + x)
 }
 
 macro_rules! impl_op {
@@ -178,25 +154,6 @@ impl_assignop! {
     MulAssign, mul_assign, Mul, mul;
     DivAssign, div_assign, Div, div;
     RemAssign, rem_assign, Rem, rem;
-}
-
-/*
-impl<Z> Zero for Fast<Z> where Z: Zero {
-    fn zero() -> Self { Fast(Z::zero()) }
-    fn is_zero(&self) -> bool {
-        self.0.is_zero()
-    }
-}
-*/
-#[cfg(feature = "num-traits")]
-impl Zero for Fast<f64> {
-    fn zero() -> Self { Fast(<_>::zero()) }
-    fn is_zero(&self) -> bool { self.get().is_zero() }
-}
-#[cfg(feature = "num-traits")]
-impl Zero for Fast<f32> {
-    fn zero() -> Self { Fast(<_>::zero()) }
-    fn is_zero(&self) -> bool { self.get().is_zero() }
 }
 
 use std::fmt;
