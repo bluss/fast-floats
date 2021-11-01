@@ -1,9 +1,10 @@
 [package]
-version = "0.1.2"
+version = "0.2.0"
 
 name = "fast-floats"
-license = "MIT/Apache-2.0"
+license = "MIT OR Apache-2.0"
 authors = ["bluss"]
+edition = "2021"
 
 repository = "https://github.com/bluss/fast-floats"
 documentation = "https://docs.rs/fast-floats/"

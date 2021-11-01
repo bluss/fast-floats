@@ -48,6 +48,15 @@ pub type FF32 = Fast<f32>;
 
 impl<F> Fast<F> {
     /// Create a new fast value
+    ///
+    /// # Safety
+    ///
+    /// The value can be used with the `fast_fadd` etc intrinsics without checks after it has been
+    /// created like this. Refer to Rust and other sources for documentation on which operations
+    /// are valid (might change with time).
+    ///
+    /// Be wary of operations creating invalid values in `Fast` which they could potentially do
+    /// depending on the operation.
     pub unsafe fn new(value: F) -> Self { Fast(value) }
 
     /// Get the inner value

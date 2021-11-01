@@ -17,6 +17,13 @@ __ https://docs.rs/fast-floats/
 Recent Changes
 --------------
 
+- 0.2.0
+
+  - ``Fast`` now requires ``unsafe`` to create values: to be clear that it is a
+    soundness issue to have problematic values in ``Fast``, i.e. non-finite
+    floats. No safe constructors also means that ``Default`` and ``Zero`` traits disappear.
+  - Fix bug in assign ops: they were previously implemented incorrectly (Except +=)
+
 - 0.1.2
 
   - Use repr(transparent) on Fast
