@@ -8,7 +8,7 @@
 //! Note that as of this writing, the Rust instrinsics use the “fast” flag
 //! documented in the langref; this enables all the float flags.
 //!
-//! [1]: http://llvm.org/docs/LangRef.html#fast-math-flags
+//! [1]: https://llvm.org/docs/LangRef.html#fast-math-flags
 //!
 //! # Rust Version
 //!
